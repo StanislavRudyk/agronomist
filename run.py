@@ -6,10 +6,12 @@ import psycopg2
 import redis
 from backend.modeles.database import engine, Base
 from backend.modeles import models
+from backend.routers import auth
+
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Agronomist API")
-
+app.include_router(auth.router, prefix="/api", tags=["Auth"])
 
 app.add_middleware(
     CORSMiddleware,

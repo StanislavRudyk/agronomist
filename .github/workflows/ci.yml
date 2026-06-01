@@ -21,11 +21,11 @@ jobs:
         echo "REDIS_PASSWORD=test_redis" >> .env
 
     - name: Build and start Docker containers
-      run: docker-compose up --build -d
+      run: docker compose up --build -d
 
     - name: Check if containers are running successfully
       run: docker ps -a
 
     - name: Stop and clean up containers
       if: always()
-      run: docker-compose down
+      run: docker compose down

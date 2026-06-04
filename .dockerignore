@@ -12,3 +12,5 @@ venv/
 .venv/
 .git
 .github
+logs/
+.env

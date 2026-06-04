@@ -1,17 +1,10 @@
-import os
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-PG_USER = os.getenv("POSTGRES_USER")
-PG_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-PG_HOST = os.getenv("POSTGRES_HOST", "localhost")
-PG_DB = os.getenv("POSTGRES_DB")
-
-SQLALCHEMY_DATABASE_URL = f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}/{PG_DB}"
+from backend.config import settings
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
+    settings.database_url,
     pool_pre_ping=True,
     pool_size=10,
     max_overflow=20,

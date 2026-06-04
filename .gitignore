@@ -43,6 +43,7 @@ frontend/.npm/
 *.db
 postgres_data/
 redis_data/
+logs/
 
 # OS generated files
 .DS_Store

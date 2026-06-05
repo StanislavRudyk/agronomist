@@ -17,7 +17,6 @@ from backend.routers.auth import limiter
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    """Управление жизненным циклом: создание таблиц при старте, закрытие Redis при остановке."""
     Base.metadata.create_all(bind=engine)
     logger.info("Таблицы БД созданы / проверены")
     yield
@@ -33,12 +32,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Rate limiter
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
-# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
@@ -47,16 +44,21 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-# Routers
+from backend.routers import weather, fields, calculator, machinery, yield_forecast, warehouse
+
 app.include_router(auth.router, prefix="/api", tags=["Auth"])
+app.include_router(weather.router, prefix="/api", tags=["Weather"])
+app.include_router(fields.router, prefix="/api", tags=["Fields"])
+app.include_router(calculator.router, prefix="/api", tags=["Calculator"])
+app.include_router(machinery.router, prefix="/api", tags=["Machinery Monitoring"])
+app.include_router(yield_forecast.router, prefix="/api", tags=["Yield Forecasting"])
+app.include_router(warehouse.router, prefix="/api", tags=["Warehouse Quality"])
 
 
 @app.get("/api/health", tags=["Health"])
 async def health_check():
-    """Проверка состояния сервиса: PostgreSQL + Redis."""
     health = {"status": "ok", "postgres": "ok", "redis": "ok"}
 
-    # Проверка PostgreSQL
     try:
         db = SessionLocal()
         db.execute(text("SELECT 1"))
@@ -66,7 +68,6 @@ async def health_check():
         health["status"] = "degraded"
         logger.error(f"Health check — PostgreSQL error: {e}")
 
-    # Проверка Redis
     try:
         redis = await get_redis()
         await redis.ping()

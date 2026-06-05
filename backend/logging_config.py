@@ -1,11 +1,8 @@
 import sys
-
 from loguru import logger
 
-# Удаляем дефолтный handler
 logger.remove()
 
-# Консольный вывод — human-readable для dev, structured для prod
 logger.add(
     sys.stdout,
     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> — <level>{message}</level>",
@@ -13,7 +10,6 @@ logger.add(
     colorize=True,
 )
 
-# Файловый лог — ротация по размеру, хранение 30 дней
 logger.add(
     "logs/agronomist.log",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} — {message}",
@@ -24,7 +20,6 @@ logger.add(
     encoding="utf-8",
 )
 
-# Отдельный лог для безопасности (логин/регистрация)
 logger.add(
     "logs/security.log",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {message}",

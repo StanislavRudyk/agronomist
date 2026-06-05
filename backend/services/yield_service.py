@@ -27,6 +27,7 @@ class YieldForecastService:
         old_analysis = db.query(SoilAnalysis).filter(SoilAnalysis.field_id == field_id).first()
         if old_analysis:
             db.delete(old_analysis)
+            db.flush()
         
         analysis = SoilAnalysis(field_id=field_id, **data.model_dump())
         db.add(analysis)

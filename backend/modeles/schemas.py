@@ -27,7 +27,6 @@ class UserCreate(BaseModel):
 
 
 class UserLogin(BaseModel):
-    """Отдельная схема для логина — без валидации сложности пароля."""
     email: EmailStr
     password: str
 
@@ -53,3 +52,61 @@ class RefreshTokenRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     detail: str
+
+
+class WeatherBase(BaseModel):
+    city: str
+    temperature: str
+    feels_like: str | None = None
+    humidity: int | None = None
+    wind_speed: str | None = None
+    description: str | None = None
+    forecast_time: datetime
+
+
+class WeatherResponse(WeatherBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class FieldCreate(BaseModel):
+    name: str
+    latitude: float
+    longitude: float
+    crop_type: str
+
+class FieldResponse(BaseModel):
+    id: int
+    user_id: int
+    name: str
+    latitude: float
+    longitude: float
+    crop_type: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class AgroWeatherCurrentResponse(BaseModel):
+    air_temp: float
+    soil_temp: float
+    soil_moisture: float
+    warnings: list[str]
+    fetched_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class AgroWeatherForecastDaily(BaseModel):
+    date: str
+    max_temp: float
+    min_temp: float
+    precipitation: float
+    warnings: list[str]
+
+class AgroWeatherForecastResponse(BaseModel):
+    field_id: int
+    crop_type: str
+    forecast: list[AgroWeatherForecastDaily]

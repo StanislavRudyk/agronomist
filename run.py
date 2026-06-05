@@ -44,7 +44,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-from backend.routers import weather, fields, calculator, machinery, yield_forecast, warehouse, offline
+from backend.routers import weather, fields, calculator, machinery, yield_forecast, warehouse, offline, reports
 
 app.include_router(auth.router, prefix="/api", tags=["Auth"])
 app.include_router(weather.router, prefix="/api", tags=["Weather"])
@@ -54,6 +54,7 @@ app.include_router(machinery.router, prefix="/api", tags=["Machinery Monitoring"
 app.include_router(yield_forecast.router, prefix="/api", tags=["Yield Forecasting"])
 app.include_router(warehouse.router, prefix="/api", tags=["Warehouse Quality"])
 app.include_router(offline.router, prefix="/api", tags=["Offline Mode"])
+app.include_router(reports.router, prefix="/api", tags=["Reports & Export"])
 
 
 @app.get("/api/health", tags=["Health"])

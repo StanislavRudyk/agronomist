@@ -24,7 +24,7 @@ async def create_machinery(
     db: Session = Depends(get_db),
     user_email: str = Depends(get_current_user)
 ):
-    # Упрощенно: считаем user_id из email для примера (в реальности нужен нормальный get_user_by_email)
+  
     from backend.modeles.models import User
     user = db.query(User).filter(User.email == user_email).first()
     return MachineryService.create_machinery(db, data, user.id)

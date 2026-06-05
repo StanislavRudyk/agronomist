@@ -151,3 +151,19 @@ class MaintenanceLog(Base):
     description = Column(String, nullable=False)
     cost = Column(Float, default=0.0)
     date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+# -------------------------------------------------------------------
+# Модели для Прогнозирования Урожайности и Почвы
+# -------------------------------------------------------------------
+
+class SoilAnalysis(Base):
+    __tablename__ = "soil_analysis"
+
+    id = Column(Integer, primary_key=True, index=True)
+    field_id = Column(Integer, ForeignKey("fields.id", ondelete="CASCADE"), nullable=False, unique=True)
+    ph_level = Column(Float, nullable=False) # Кислотность (0-14)
+    organic_matter_pct = Column(Float, nullable=False) # Гумус (%)
+    nitrogen_mg_kg = Column(Float, nullable=False) # Азот (N)
+    phosphorus_mg_kg = Column(Float, nullable=False) # Фосфор (P)
+    potassium_mg_kg = Column(Float, nullable=False) # Калий (K)
+    date = Column(DateTime, default=lambda: datetime.now(timezone.utc))

@@ -340,4 +340,36 @@ class MaintenanceLogResponse(MaintenanceLogCreate):
     class Config:
         from_attributes = True
 
+# -------------------------------------------------------------------
+# Схемы для Прогнозирования Урожайности и Почвы
+# -------------------------------------------------------------------
+
+class SoilAnalysisCreate(BaseModel):
+    ph_level: float = Field(..., description="Кислотность (pH), от 1 до 14", ge=1.0, le=14.0)
+    organic_matter_pct: float = Field(..., description="Содержание гумуса в %", ge=0.0)
+    nitrogen_mg_kg: float = Field(..., description="Легкогидролизуемый азот, мг/кг", ge=0.0)
+    phosphorus_mg_kg: float = Field(..., description="Подвижный фосфор, мг/кг", ge=0.0)
+    potassium_mg_kg: float = Field(..., description="Обменный калий, мг/кг", ge=0.0)
+
+class SoilAnalysisResponse(SoilAnalysisCreate):
+    id: int
+    field_id: int
+    date: datetime
+    
+    class Config:
+        from_attributes = True
+
+class YieldForecastScenario(BaseModel):
+    scenario: str # Оптимистичный, Реалистичный, Пессимистичный
+    expected_yield_t_ha: float
+    description: str
+
+class YieldForecastResponse(BaseModel):
+    field_id: int
+    crop_type: str
+    limiting_factor: str
+    ph_status: str
+    forecasts: list[YieldForecastScenario]
+    recommendations: list[str]
+
 

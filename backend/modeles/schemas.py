@@ -89,10 +89,50 @@ class FieldResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class SoilTemperatures(BaseModel):
+    surface_0cm: float
+    depth_6cm: float
+    depth_18cm: float
+    depth_54cm: float
+
+class SoilMoistures(BaseModel):
+    layer_0_1cm: float
+    layer_1_3cm: float
+    layer_3_9cm: float
+    layer_9_27cm: float
+    layer_27_81cm: float
+
+class WindData(BaseModel):
+    speed_kmh: float
+    direction_deg: float
+    gusts_kmh: float
+
+class RadiationData(BaseModel):
+    shortwave_wm2: float
+    direct_wm2: float
+    diffuse_wm2: float
+    direct_normal_wm2: float
+
 class AgroWeatherCurrentResponse(BaseModel):
     air_temp: float
-    soil_temp: float
-    soil_moisture: float
+    apparent_temp: float
+    relative_humidity: int
+    vapour_pressure_deficit_kpa: float
+    precipitation_mm: float
+    rain_mm: float
+    showers_mm: float
+    snowfall_cm: float
+    snow_depth_m: float
+    weather_code: int
+    cloud_cover_pct: int
+    pressure_msl_hpa: float
+    surface_pressure_hpa: float
+    visibility_m: float
+    wind: WindData
+    soil_temperatures: SoilTemperatures
+    soil_moistures: SoilMoistures
+    sunshine_duration_s: float
+    is_day: bool
     warnings: list[str]
     fetched_at: datetime
 
@@ -101,12 +141,69 @@ class AgroWeatherCurrentResponse(BaseModel):
 
 class AgroWeatherForecastDaily(BaseModel):
     date: str
+    sunrise: str
+    sunset: str
+    daylight_duration_s: float
+    sunshine_duration_s: float
     max_temp: float
     min_temp: float
-    precipitation: float
+    apparent_temp_max: float
+    apparent_temp_min: float
+    precipitation_sum_mm: float
+    rain_sum_mm: float
+    showers_sum_mm: float
+    snowfall_sum_cm: float
+    precipitation_hours: float
+    precipitation_probability_max: int
+    wind_speed_max_kmh: float
+    wind_gusts_max_kmh: float
+    wind_direction_dominant_deg: int
+    shortwave_radiation_sum_mjm2: float
+    et0_fao_mm: float
+    uv_index_max: float
     warnings: list[str]
 
 class AgroWeatherForecastResponse(BaseModel):
     field_id: int
     crop_type: str
     forecast: list[AgroWeatherForecastDaily]
+
+
+class AirQualityCurrentResponse(BaseModel):
+    pm10_ugm3: float
+    pm2_5_ugm3: float
+    dust_ugm3: float
+    european_aqi: int
+    us_aqi: int
+    uv_index: float
+    nitrogen_dioxide_ugm3: float
+    ozone_ugm3: float
+    spraying_safe: bool
+    warnings: list[str]
+    fetched_at: str
+
+class AirQualityForecastDaily(BaseModel):
+    date: str
+    pm10_max_ugm3: float
+    pm2_5_max_ugm3: float
+    dust_max_ugm3: float
+    european_aqi_max: int
+    us_aqi_max: int
+    warnings: list[str]
+
+class AirQualityForecastResponse(BaseModel):
+    field_id: int
+    forecast: list[AirQualityForecastDaily]
+
+
+class FloodForecastDaily(BaseModel):
+    date: str
+    river_discharge_m3s: float | None
+    river_discharge_max_m3s: float | None
+    river_discharge_min_m3s: float | None
+    warnings: list[str]
+
+class FloodForecastResponse(BaseModel):
+    field_id: int
+    forecast: list[FloodForecastDaily]
+

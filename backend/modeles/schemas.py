@@ -250,3 +250,94 @@ class FertilizerResponse(BaseModel):
     potassium_kg_ha: float
 
 
+# -------------------------------------------------------------------
+# Схемы для Мониторинга Техники и ГСМ
+# -------------------------------------------------------------------
+
+class MachineryCreate(BaseModel):
+    name: str
+    type: str
+    license_plate: str | None = None
+    fuel_capacity_l: float
+    maintenance_interval_h: float = 250.0
+
+class MachineryResponse(MachineryCreate):
+    id: int
+    user_id: int
+    current_fuel_l: float
+    moto_hours: float
+    status: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class ImplementCreate(BaseModel):
+    name: str
+    type: str
+    width_m: float
+
+class ImplementResponse(ImplementCreate):
+    id: int
+    user_id: int
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class FuelLogCreate(BaseModel):
+    machinery_id: int
+    log_type: str # REFILL, DRAIN, USAGE
+    amount_l: float
+    description: str | None = None
+
+class FuelLogResponse(FuelLogCreate):
+    id: int
+    date: datetime
+    
+    class Config:
+        from_attributes = True
+
+class WorkOrderCreate(BaseModel):
+    machinery_id: int
+    implement_id: int | None = None
+    field_id: int
+    operation: str
+    area_ha: float
+    duration_h: float
+    avg_speed_kmh: float | None = None
+    fuel_used_l: float
+    fuel_norm_l_ha: float # Будет умножаться на площадь
+
+class WorkOrderResponse(BaseModel):
+    id: int
+    user_id: int
+    machinery_id: int
+    implement_id: int | None
+    field_id: int
+    operation: str
+    area_ha: float
+    duration_h: float
+    avg_speed_kmh: float | None
+    speed_violation: bool
+    fuel_used_l: float
+    fuel_norm_l: float
+    date: datetime
+    
+    class Config:
+        from_attributes = True
+
+class MaintenanceLogCreate(BaseModel):
+    machinery_id: int
+    moto_hours_at_maintenance: float
+    description: str
+    cost: float = 0.0
+
+class MaintenanceLogResponse(MaintenanceLogCreate):
+    id: int
+    date: datetime
+    
+    class Config:
+        from_attributes = True
+
+

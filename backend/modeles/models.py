@@ -168,3 +168,56 @@ class SoilAnalysis(Base):
     potassium_mg_kg = Column(Float, nullable=False) # Калий (K)
     soil_texture = Column(String, default="суглинок") # песок, суглинок, глина
     date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+# -------------------------------------------------------------------
+# Модели для Складского Учёта и Качества Зерна
+# -------------------------------------------------------------------
+
+class Warehouse(Base):
+    __tablename__ = "warehouses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    type = Column(String, nullable=False) # элеватор, напольный
+    capacity_t = Column(Float, nullable=False)
+    current_load_t = Column(Float, default=0.0)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class GrainLot(Base):
+    __tablename__ = "grain_lots"
+
+    id = Column(Integer, primary_key=True, index=True)
+    warehouse_id = Column(Integer, ForeignKey("warehouses.id", ondelete="CASCADE"), nullable=False)
+    field_id = Column(Integer, ForeignKey("fields.id", ondelete="SET NULL"), nullable=True)
+    crop_type = Column(String, nullable=False)
+    weight_t = Column(Float, nullable=False)
+    harvest_date = Column(DateTime, nullable=False)
+    grain_class = Column(Integer)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class QualityAnalysis(Base):
+    __tablename__ = "quality_analysis"
+
+    id = Column(Integer, primary_key=True, index=True)
+    grain_lot_id = Column(Integer, ForeignKey("grain_lots.id", ondelete="CASCADE"), nullable=False)
+    moisture_pct = Column(Float, nullable=False) # Влажность
+    impurity_pct = Column(Float, nullable=False) # Сорность
+    gluten_pct = Column(Float) # Клейковина
+    protein_pct = Column(Float) # Протеин
+    test_weight_g_l = Column(Float) # Натурная масса
+    falling_number = Column(Integer) # Число падения
+    date = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class StorageCondition(Base):
+    __tablename__ = "storage_conditions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    warehouse_id = Column(Integer, ForeignKey("warehouses.id", ondelete="CASCADE"), nullable=False)
+    temperature_c = Column(Float, nullable=False)
+    humidity_pct = Column(Float, nullable=False)
+    is_alert = Column(Boolean, default=False)
+    date = Column(DateTime, default=lambda: datetime.now(timezone.utc))

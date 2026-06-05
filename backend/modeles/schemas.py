@@ -373,4 +373,60 @@ class YieldForecastResponse(BaseModel):
     forecasts: list[YieldForecastScenario]
     recommendations: list[str]
 
+# -------------------------------------------------------------------
+# Схемы для Складского Учёта и Качества Зерна
+# -------------------------------------------------------------------
 
+class WarehouseCreate(BaseModel):
+    name: str
+    type: str # элеватор, напольный
+    capacity_t: float
+
+class WarehouseResponse(WarehouseCreate):
+    id: int
+    user_id: int
+    current_load_t: float
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class GrainLotCreate(BaseModel):
+    warehouse_id: int
+    field_id: int | None = None
+    crop_type: str
+    weight_t: float
+    harvest_date: datetime
+
+class GrainLotResponse(GrainLotCreate):
+    id: int
+    grain_class: int | None
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class QualityAnalysisCreate(BaseModel):
+    grain_lot_id: int
+    moisture_pct: float = Field(..., description="Влажность зерна %")
+    impurity_pct: float = Field(..., description="Сорность %")
+    gluten_pct: float | None = None
+    protein_pct: float | None = None
+    test_weight_g_l: float | None = None
+    falling_number: int | None = None
+
+class QualityAnalysisResponse(QualityAnalysisCreate):
+    id: int
+    date: datetime
+    class Config:
+        from_attributes = True
+
+class StorageConditionCreate(BaseModel):
+    warehouse_id: int
+    temperature_c: float
+    humidity_pct: float
+
+class StorageConditionResponse(StorageConditionCreate):
+    id: int
+    is_alert: bool
+    date: datetime
+    class Config:
+        from_attributes = True

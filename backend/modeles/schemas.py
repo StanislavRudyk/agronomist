@@ -209,3 +209,44 @@ class FloodForecastResponse(BaseModel):
     field_id: int
     forecast: list[FloodForecastDaily]
 
+class SeedingRateRequest(BaseModel):
+    target_density_mln_ha: float
+    weight_1000_seeds_g: float
+    germination_percent: float
+    purity_percent: float
+    field_area_ha: float
+
+    @field_validator("germination_percent", "purity_percent")
+    @classmethod
+    def check_percents(cls, v: float) -> float:
+        if not (0 < v <= 100):
+            raise ValueError("Процент должен быть от 0.1 до 100")
+        return v
+
+class SeedingRateResponse(BaseModel):
+    seeding_rate_kg_ha: float
+    total_seeds_kg: float
+
+class SprayingRequest(BaseModel):
+    tank_volume_l: float
+    water_rate_l_ha: float
+    chemical_rate_per_ha: float
+    field_area_ha: float
+
+class SprayingResponse(BaseModel):
+    area_per_tank_ha: float
+    chemical_per_tank: float
+    total_water_l: float
+    total_chemical: float
+    tanks_needed: float
+
+class FertilizerRequest(BaseModel):
+    crop_type: str
+    target_yield_t_ha: float
+
+class FertilizerResponse(BaseModel):
+    nitrogen_kg_ha: float
+    phosphorus_kg_ha: float
+    potassium_kg_ha: float
+
+

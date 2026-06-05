@@ -44,11 +44,12 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
-from backend.routers import weather, fields
+from backend.routers import weather, fields, calculator
 
 app.include_router(auth.router, prefix="/api", tags=["Auth"])
 app.include_router(weather.router, prefix="/api", tags=["Weather"])
 app.include_router(fields.router, prefix="/api", tags=["Fields"])
+app.include_router(calculator.router, prefix="/api", tags=["Calculator"])
 
 
 @app.get("/api/health", tags=["Health"])

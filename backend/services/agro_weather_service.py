@@ -14,6 +14,7 @@ from backend.modeles.schemas import (
     SoilTemperatures,
     SoilMoistures,
     WindData,
+    RadiationData,
 )
 from backend.modeles.redis_client import get_redis
 from backend.services.agro_analyzer import AgroAnalyzer

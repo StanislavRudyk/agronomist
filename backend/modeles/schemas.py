@@ -116,6 +116,7 @@ class RadiationData(BaseModel):
 class AgroWeatherCurrentResponse(BaseModel):
     air_temp: float
     apparent_temp: float
+    dew_point_c: float
     relative_humidity: int
     vapour_pressure_deficit_kpa: float
     precipitation_mm: float
@@ -132,6 +133,7 @@ class AgroWeatherCurrentResponse(BaseModel):
     soil_temperatures: SoilTemperatures
     soil_moistures: SoilMoistures
     sunshine_duration_s: float
+    radiation: RadiationData
     is_day: bool
     warnings: list[str]
     fetched_at: datetime

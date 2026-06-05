@@ -39,6 +39,7 @@ class AgroWeatherData(Base):
 
     air_temp = Column(Float, nullable=False)
     apparent_temp = Column(Float)
+    dew_point = Column(Float)
     relative_humidity = Column(Integer)
     vapour_pressure_deficit = Column(Float)
 
@@ -54,6 +55,9 @@ class AgroWeatherData(Base):
     surface_pressure = Column(Float)
     visibility = Column(Float)
     sunshine_duration = Column(Float)
+    shortwave_radiation = Column(Float)
+    direct_radiation = Column(Float)
+    diffuse_radiation = Column(Float)
     is_day = Column(Integer)
 
     wind_speed = Column(Float)

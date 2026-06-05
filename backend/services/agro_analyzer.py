@@ -134,6 +134,13 @@ class AgroAnalyzer:
         return warnings
 
     @staticmethod
+    def _analyze_dew_point(air_temp: float, dew_point: float) -> list[str]:
+        warnings: list[str] = []
+        if (air_temp - dew_point) <= 2.0:
+            warnings.append(f"ВНИМАНИЕ: Высокая вероятность выпадения росы (разница {air_temp - dew_point:.1f}°C). Опрыскивание не рекомендуется (смывание химикатов).")
+        return warnings
+
+    @staticmethod
     def analyze(
         crop_type: str,
         air_temp: float,
@@ -148,9 +155,12 @@ class AgroAnalyzer:
         uv_index_max: float = 0.0,
         visibility: float = 99999.0,
         vpd: float = 0.0,
+        dew_point: float | None = None,
     ) -> list[str]:
         crop_lower = crop_type.lower().strip()
         warnings: list[str] = []
+        if dew_point is not None:
+            warnings.extend(AgroAnalyzer._analyze_dew_point(air_temp, dew_point))
         warnings.extend(AgroAnalyzer._analyze_frost(crop_lower, air_temp, soil_temp, snow_depth))
         warnings.extend(AgroAnalyzer._analyze_drought(soil_moisture, precip_5days))
         warnings.extend(AgroAnalyzer._analyze_wind(wind_speed, wind_gusts))

@@ -49,6 +49,11 @@ _CURRENT_PARAMS = ",".join([
     "soil_moisture_9_to_27cm",
     "soil_moisture_27_to_81cm",
     "sunshine_duration",
+    "shortwave_radiation",
+    "direct_radiation",
+    "diffuse_radiation",
+    "direct_normal_irradiance",
+    "dew_point_2m",
     "is_day",
 ])
 
@@ -196,6 +201,11 @@ class AgroWeatherService:
                 sm_9_27         = float(_safe(c.get("soil_moisture_9_to_27cm")))
                 sm_27_81        = float(_safe(c.get("soil_moisture_27_to_81cm")))
                 sunshine        = float(_safe(c.get("sunshine_duration")))
+                sw_rad          = float(_safe(c.get("shortwave_radiation")))
+                dir_rad         = float(_safe(c.get("direct_radiation")))
+                diff_rad        = float(_safe(c.get("diffuse_radiation")))
+                dir_norm_rad    = float(_safe(c.get("direct_normal_irradiance")))
+                dew_point       = float(_safe(c.get("dew_point_2m")))
                 is_day          = bool(_safe(c.get("is_day")))
 
                 warnings = AgroAnalyzer.analyze(
@@ -208,12 +218,14 @@ class AgroWeatherService:
                     wind_gusts=wind_gusts,
                     relative_humidity=float(humidity),
                     vpd=vpd,
+                    dew_point=dew_point,
                 )
 
                 db_entry = AgroWeatherData(
                     field_id=field_id,
                     air_temp=air_temp,
                     apparent_temp=apparent_temp,
+                    dew_point=dew_point,
                     relative_humidity=humidity,
                     vapour_pressure_deficit=vpd,
                     precipitation=precip,
@@ -238,6 +250,9 @@ class AgroWeatherService:
                     soil_moisture_9_27cm=sm_9_27,
                     soil_moisture_27_81cm=sm_27_81,
                     sunshine_duration=sunshine,
+                    shortwave_radiation=sw_rad,
+                    direct_radiation=dir_rad,
+                    diffuse_radiation=diff_rad,
                     is_day=int(is_day),
                     warnings=json.dumps(warnings, ensure_ascii=False),
                 )
@@ -248,6 +263,7 @@ class AgroWeatherService:
                 result = AgroWeatherCurrentResponse(
                     air_temp=air_temp,
                     apparent_temp=apparent_temp,
+                    dew_point_c=dew_point,
                     relative_humidity=humidity,
                     vapour_pressure_deficit_kpa=vpd,
                     precipitation_mm=precip,
@@ -275,6 +291,12 @@ class AgroWeatherService:
                         layer_27_81cm=sm_27_81,
                     ),
                     sunshine_duration_s=sunshine,
+                    radiation=RadiationData(
+                        shortwave_wm2=sw_rad,
+                        direct_wm2=dir_rad,
+                        diffuse_wm2=diff_rad,
+                        direct_normal_wm2=dir_norm_rad,
+                    ),
                     is_day=is_day,
                     warnings=warnings,
                     fetched_at=db_entry.created_at,
@@ -308,6 +330,7 @@ class AgroWeatherService:
             return AgroWeatherCurrentResponse(
                 air_temp=_safe(db_offline.air_temp),
                 apparent_temp=_safe(db_offline.apparent_temp),
+                dew_point_c=_safe(db_offline.dew_point),
                 relative_humidity=int(_safe(db_offline.relative_humidity)),
                 vapour_pressure_deficit_kpa=_safe(db_offline.vapour_pressure_deficit),
                 precipitation_mm=_safe(db_offline.precipitation),
@@ -339,6 +362,12 @@ class AgroWeatherService:
                     layer_27_81cm=_safe(db_offline.soil_moisture_27_81cm),
                 ),
                 sunshine_duration_s=_safe(db_offline.sunshine_duration),
+                radiation=RadiationData(
+                    shortwave_wm2=_safe(db_offline.shortwave_radiation),
+                    direct_wm2=_safe(db_offline.direct_radiation),
+                    diffuse_wm2=_safe(db_offline.diffuse_radiation),
+                    direct_normal_wm2=_safe(db_offline.shortwave_radiation), # offline fallback approximation
+                ),
                 is_day=bool(db_offline.is_day),
                 warnings=json.loads(db_offline.warnings) if db_offline.warnings else [],
                 fetched_at=db_offline.created_at,

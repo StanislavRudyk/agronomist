@@ -350,6 +350,7 @@ class SoilAnalysisCreate(BaseModel):
     nitrogen_mg_kg: float = Field(..., description="Легкогидролизуемый азот, мг/кг", ge=0.0)
     phosphorus_mg_kg: float = Field(..., description="Подвижный фосфор, мг/кг", ge=0.0)
     potassium_mg_kg: float = Field(..., description="Обменный калий, мг/кг", ge=0.0)
+    soil_texture: str = Field(default="суглинок", description="песок, суглинок, глина")
 
 class SoilAnalysisResponse(SoilAnalysisCreate):
     id: int

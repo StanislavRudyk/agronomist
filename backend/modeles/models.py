@@ -166,4 +166,5 @@ class SoilAnalysis(Base):
     nitrogen_mg_kg = Column(Float, nullable=False) # Азот (N)
     phosphorus_mg_kg = Column(Float, nullable=False) # Фосфор (P)
     potassium_mg_kg = Column(Float, nullable=False) # Калий (K)
+    soil_texture = Column(String, default="суглинок") # песок, суглинок, глина
     date = Column(DateTime, default=lambda: datetime.now(timezone.utc))

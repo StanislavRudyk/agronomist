@@ -12,11 +12,48 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Copy files via SSH
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install dependencies and build
+      working-directory: ./frontend
+      run: |
+        npm install
+        npm run build
+
+    - name: Prepare frontend files
+      run: |
+        cp -R frontend/dist/* .
+        echo '<?php readfile("index.html"); ?>' > index.php
+
+    - name: Copy frontend to server
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USERNAME }}
         password: ${{ secrets.SSH_PASSWORD }}
-        source: "."
+        source: "index.html,assets,hero-video.mp4,index.php"
         target: "www/"
+
+    - name: Copy backend to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        source: "backend/,run.py,requirements.txt"
+        target: "./"
+
+    - name: Install dependencies & restart
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USERNAME }}
+        password: ${{ secrets.SSH_PASSWORD }}
+        script: |
+          cd ~/
+          python3 -m venv venv
+          ./venv/bin/pip install -r requirements.txt
+          pkill -x uvicorn 2>/dev/null; sleep 1; echo "Done"

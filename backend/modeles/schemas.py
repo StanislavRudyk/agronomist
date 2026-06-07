@@ -255,11 +255,11 @@ class FertilizerResponse(BaseModel):
 # -------------------------------------------------------------------
 
 class MachineryCreate(BaseModel):
-    name: str
-    type: str
-    license_plate: str | None = None
-    fuel_capacity_l: float
-    maintenance_interval_h: float = 250.0
+    name: str = Field(..., max_length=255)
+    type: str = Field(..., max_length=100)
+    license_plate: str | None = Field(default=None, max_length=50)
+    fuel_capacity_l: float = Field(..., gt=0, description="Объем бака")
+    maintenance_interval_h: float = Field(default=250.0, gt=0)
 
 class MachineryResponse(MachineryCreate):
     id: int
@@ -287,9 +287,9 @@ class ImplementResponse(ImplementCreate):
 
 class FuelLogCreate(BaseModel):
     machinery_id: int
-    log_type: str # REFILL, DRAIN, USAGE
-    amount_l: float
-    description: str | None = None
+    log_type: str = Field(..., max_length=50) # REFILL, DRAIN, USAGE
+    amount_l: float = Field(..., gt=0, description="Количество топлива, должно быть > 0")
+    description: str | None = Field(default=None, max_length=500)
 
 class FuelLogResponse(FuelLogCreate):
     id: int
@@ -302,12 +302,12 @@ class WorkOrderCreate(BaseModel):
     machinery_id: int
     implement_id: int | None = None
     field_id: int
-    operation: str
-    area_ha: float
-    duration_h: float
-    avg_speed_kmh: float | None = None
-    fuel_used_l: float
-    fuel_norm_l_ha: float # Будет умножаться на площадь
+    operation: str = Field(..., max_length=255)
+    area_ha: float = Field(..., ge=0, description="Площадь обработки")
+    duration_h: float = Field(..., ge=0, description="Длительность работы в часах")
+    avg_speed_kmh: float | None = Field(default=None, ge=0)
+    fuel_used_l: float = Field(..., ge=0, description="Израсходовано топлива")
+    fuel_norm_l_ha: float = Field(..., ge=0, description="Норма расхода")
 
 class WorkOrderResponse(BaseModel):
     id: int
@@ -378,8 +378,8 @@ class YieldForecastResponse(BaseModel):
 # -------------------------------------------------------------------
 
 class WarehouseCreate(BaseModel):
-    name: str
-    type: str # элеватор, напольный
+    name: str = Field(..., max_length=255)
+    type: str = Field(..., max_length=50) 
     capacity_t: float
 
 class WarehouseResponse(WarehouseCreate):

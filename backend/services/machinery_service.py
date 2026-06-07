@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from backend.modeles.models import Machinery, Implement, FuelLog, WorkOrder, MaintenanceLog, User
+from backend.modeles.models import Machinery, Implement, FuelLog, WorkOrder, MaintenanceLog, Field
 from backend.modeles.schemas import (
     MachineryCreate,
     ImplementCreate,
@@ -53,6 +53,18 @@ class MachineryService:
         machinery = db.query(Machinery).filter(Machinery.id == data.machinery_id, Machinery.user_id == user_id).first()
         if not machinery:
             raise HTTPException(status_code=404, detail="Техника не найдена")
+
+        field = db.query(Field).filter(Field.id == data.field_id, Field.user_id == user_id).first()
+        if not field:
+            raise HTTPException(status_code=403, detail="Поле не найдено или нет доступа")
+
+        if data.implement_id is not None:
+            implement = db.query(Implement).filter(
+                Implement.id == data.implement_id,
+                Implement.user_id == user_id,
+            ).first()
+            if not implement:
+                raise HTTPException(status_code=403, detail="Орудие не найдено или нет доступа")
 
         # 1. Проверка скорости (нарушение технологии)
         speed_violation = False

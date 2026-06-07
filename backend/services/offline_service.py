@@ -76,8 +76,9 @@ class OfflineService:
                 elif op_type == "add_soil_analysis":
                     from backend.services.yield_service import YieldForecastService
                     from backend.modeles.schemas import SoilAnalysisCreate
-                    field_id = data.pop("field_id")
-                    sa_data = SoilAnalysisCreate(**data)
+                    payload = dict(data)
+                    field_id = payload.pop("field_id")
+                    sa_data = SoilAnalysisCreate(**payload)
                     YieldForecastService.add_soil_analysis(db, field_id, sa_data, user_id)
                     applied.append({"type": op_type, "status": "applied"})
 

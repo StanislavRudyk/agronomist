@@ -40,8 +40,14 @@ def register_user(user: UserCreate, request: Request, db: Session = Depends(get_
     new_user = models.User(email=user.email, hashed_password=hashed_pw)
 
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    from sqlalchemy.exc import IntegrityError
+    try:
+        db.commit()
+        db.refresh(new_user)
+    except IntegrityError:
+        db.rollback()
+        security_logger.warning(f"Race condition: регистрация существующего email: {user.email}")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Этот email уже занят!")
 
     security_logger.info(f"Новый пользователь зарегистрирован: {user.email}")
     return new_user
@@ -117,6 +123,8 @@ async def refresh_tokens(body: RefreshTokenRequest, request: Request, db: Sessio
 async def logout(body: RefreshTokenRequest, current_user: str = Depends(get_current_user)):
     """Отзыв refresh token — пользователь больше не сможет обновить токены."""
     payload = decode_token(body.refresh_token)
+    if payload.get("sub") != current_user:
+        raise HTTPException(status_code=403, detail="Refresh token не принадлежит текущему пользователю")
     jti = payload.get("jti")
 
     if jti:

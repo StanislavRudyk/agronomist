@@ -4,7 +4,7 @@ from typing import List
 
 from backend.modeles.database import get_db
 from backend.routers.auth import get_current_user
-from backend.modeles.models import User
+from backend.routers.auth import get_current_user
 from backend.modeles.schemas import (
     WarehouseCreate, WarehouseResponse,
     GrainLotCreate, GrainLotResponse,
@@ -16,7 +16,11 @@ from backend.services.warehouse_service import WarehouseService
 router = APIRouter()
 
 def _get_user_id(db: Session, user_email: str) -> int:
+    from backend.modeles.models import User
     user = db.query(User).filter(User.email == user_email).first()
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
     return user.id
 
 @router.post("/warehouse/", response_model=WarehouseResponse, summary="Регистрация склада/элеватора")

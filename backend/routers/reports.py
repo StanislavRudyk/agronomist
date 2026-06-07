@@ -12,6 +12,9 @@ router = APIRouter()
 
 def _get_user_id(db: Session, user_email: str) -> int:
     user = db.query(User).filter(User.email == user_email).first()
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
     return user.id
 
 @router.get("/reports/annual/{year}", summary="Годовой отчёт (ГСМ, урожайность, операции, аномалии)")

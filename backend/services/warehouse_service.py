@@ -34,17 +34,30 @@ class WarehouseService:
 
     @staticmethod
     def add_grain_lot(db: Session, data: GrainLotCreate, user_id: int) -> GrainLot:
-        wh = db.query(Warehouse).filter(Warehouse.id == data.warehouse_id, Warehouse.user_id == user_id).first()
+        wh = db.query(Warehouse).filter(
+            Warehouse.id == data.warehouse_id,
+            Warehouse.user_id == user_id,
+        ).first()
         if not wh:
             raise HTTPException(status_code=404, detail="Склад не найден")
 
         if wh.current_load_t + data.weight_t > wh.capacity_t:
-            raise HTTPException(status_code=400, detail=f"Нет места на складе. Свободно: {wh.capacity_t - wh.current_load_t:.1f} тонн")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Нет места на складе. Свободно: {wh.capacity_t - wh.current_load_t:.1f} тонн",
+            )
 
         wh.current_load_t += data.weight_t
         lot = GrainLot(**data.model_dump())
         db.add(lot)
-        db.commit()
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+            wh = db.query(Warehouse).filter(Warehouse.id == data.warehouse_id).first()
+            if wh and wh.current_load_t + data.weight_t > wh.capacity_t:
+                raise HTTPException(status_code=409, detail="Конкурентное обновление склада — повторите операцию")
+            raise
         db.refresh(lot)
         return lot
 

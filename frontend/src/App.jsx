@@ -570,6 +570,18 @@ export default function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
   useEffect(() => {
+    // Перехоплюємо токени після входу через Google
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      localStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      // Очищаємо URL від токенів
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
     const handlePopState = () => setCurrentPath(window.location.pathname);
     window.addEventListener('popstate', handlePopState);
 
@@ -599,7 +611,25 @@ export default function App() {
 
   if (currentPath === '/login') return <AuthPage isLogin={true} />;
   if (currentPath === '/register') return <AuthPage isLogin={false} />;
-
+  
+  if (currentPath === '/dashboard') {
+    return (
+      <div style={{ padding: '50px', textAlign: 'center', color: 'white', background: '#111', minHeight: '100vh' }}>
+        <h1>Дашборд (В розробці)</h1>
+        <p>Ви успішно авторизувались!</p>
+        <button 
+          className="btn btn-outline" 
+          onClick={() => {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            window.location.href = '/';
+          }}
+        >
+          Вийти
+        </button>
+      </div>
+    );
+  }
 
   return <LandingPage />;
 }

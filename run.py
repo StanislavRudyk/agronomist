@@ -69,7 +69,7 @@ async def health_check():
     except Exception as e:
         health["postgres"] = f"error: {str(e)}"
         health["status"] = "degraded"
-        logger.error(f"Health check — PostgreSQL error: {e}")
+        logger.error(f"Health check  PostgreSQL error: {e}")
 
     try:
         redis = await get_redis()
@@ -77,6 +77,6 @@ async def health_check():
     except Exception as e:
         health["redis"] = f"error: {str(e)}"
         health["status"] = "degraded"
-        logger.error(f"Health check — Redis error: {e}")
+        logger.error(f"Health check  Redis error: {e}")
 
     return health

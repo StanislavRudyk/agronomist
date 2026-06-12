@@ -1,369 +1,605 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { CloudRain, MapPin, Truck, Package, ArrowRight, Play, Leaf, BarChart3, Thermometer, Bell, Droplets, Sun, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import {
+  CloudRain,
+  Tractor,
+  Warehouse,
+  Leaf,
+  ArrowLeft,
+  FileBarChart,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertCircle,
+  Loader2,
+  User,
+  Lock,
+  Mail,
+} from 'lucide-react';
 
-function useScrollReveal() {
-  const ref = useRef(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
-      { threshold: 0.15 }
-    );
-    if (ref.current) ref.current.querySelectorAll('.reveal').forEach(el => obs.observe(el));
-    return () => obs.disconnect();
-  }, []);
-  return ref;
-}
+const API_BASE = 'http://localhost:8000/api';
 
-function AnimatedCounter({ end, suffix = '' }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) {
-        let start = 0;
-        const step = end / 60;
-        const timer = setInterval(() => {
-          start += step;
-          if (start >= end) { setCount(end); clearInterval(timer); }
-          else setCount(Math.floor(start));
-        }, 16);
-        obs.disconnect();
+const TRANSLATIONS = {
+  uk: {
+    navLogin: "Вхід",
+    navRegister: "Реєстрація",
+    heroTitle: "Інтелект вашого поля",
+    heroLead: "Платформа точного землеробства для тих, хто приймає рішення на основі даних. Метеорологія, техніка та складський облік в єдиній екосистемі.",
+    btnOpen: "Відкрити платформу",
+    btnFeatures: "Можливості",
+    sections: [
+      {
+        id: "weather",
+        badge: "01 // ПОГОДА",
+        icon: <CloudRain size={28} className="card-icon" />,
+        title: "Гіперлокальна погода",
+        desc: "Забудьте про регіональні прогнози з точністю плюс-мінус 50 км. Наш алгоритм збирає дані з власних метеостанцій і супутників, аналізує 15+ параметрів атмосфери та будує прогноз окремо для кожного поля. Ви отримуєте точку роси, ймовірність приморозків, швидкість вітру та індекс ультрафіолету на 10 днів наперед.",
+        extraDesc: "Система автоматично попереджає про ризики та блокує планові операції, якщо погодні умови є небезпечними, зберігаючи ваші ресурси та час. Наша метеомодель адаптується під мікроклімат вашого регіону з часом.",
+        primaryBtn: "Підключити метеостанцію",
+        secondaryBtn: "Дивитись карту опадів",
+        video: "/14626085_3840_2160_25fps.mp4"
+      },
+      {
+        id: "machinery",
+        badge: "02 // ТЕХНІКА",
+        icon: <Tractor size={28} className="card-icon" />,
+        title: "Моніторинг техніки",
+        desc: "Повний цифровий двійник вашого автопарку в режимі реального часу. Трактори, комбайни та обприскувачі передають телеметрію кожні 5 секунд: GPS-координати з точністю RTK, оберти двигуна, витрату пального та стан гідравліки.",
+        extraDesc: "Система автоматично фіксує простої, перекриття при обробці поля та відхилення від заданого маршруту. Повний звіт по кожній операції формується без участі оператора, що гарантує 100% прозорість витрат.",
+        primaryBtn: "Додати техніку",
+        secondaryBtn: "Аналіз маршрутів",
+        video: "/12093651_3840_2160_60fps.mp4"
+      },
+      {
+        id: "warehouse",
+        badge: "03 // СКЛАД",
+        icon: <Warehouse size={28} className="card-icon" />,
+        title: "Розумний склад",
+        desc: "Від воріт елеватора до кожного гектара поля  повний ланцюг руху матеріалів під вашим контролем. Мережа IoT-датчиків цілодобово вимірює температуру та вологість у кожній комірці зерносховища.",
+        extraDesc: "При перевищенні норми система миттєво надсилає сповіщення та пропонує план вентиляції. Залишки насіння, добрив та ЗЗР автоматично списуються при кожній польовій операції, уникаючи людського фактору.",
+        primaryBtn: "Провести інвентаризацію",
+        secondaryBtn: "Залишки на складах",
+        video: "/12747865_1920_1080_60fps.mp4"
+      },
+      {
+        id: "reports",
+        badge: "04 // ЗВІТИ",
+        icon: <FileBarChart size={28} className="card-icon" />,
+        title: "Цифрова історія",
+        desc: "Єдина хронологія всіх подій вашого господарства. Кожна обробка поля, кожна доза добрив та кожен намолот зберігаються автоматично і формують карту врожайності з прив'язкою до GPS.",
+        extraDesc: "Звіти для банків, страхових компаній та держструктур генеруються в один клік. Застосунок повністю працює офлайн: всі дані синхронізуються при появі зв'язку, навіть якщо агроном весь день був у полі.",
+        primaryBtn: "Згенерувати звіт",
+        secondaryBtn: "Експорт даних",
+        video: "/9130276-hd_1920_1080_25fps.mp4"
       }
-    }, { threshold: 0.5 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [end]);
-  return <span ref={ref} className="stat-num">{count}{suffix}</span>;
-}
+    ],
+    footerTitle: "Готові перейти на новий рівень?",
+    footerLead: "Приєднуйтесь до лідерів агробізнесу сьогодні. Залиште рутину алгоритмам, а собі контроль та прибуток.",
+    btnAccount: "Створити акаунт",
+    rights: "Всі права захищені."
+  },
+  en: {
+    navLogin: "Login",
+    navRegister: "Sign Up",
+    heroTitle: "Intelligence of your field",
+    heroLead: "Precision farming platform for data-driven decisions. Meteorology, machinery and warehouse management in a single ecosystem.",
+    btnOpen: "Open Platform",
+    btnFeatures: "Features",
+    sections: [
+      {
+        id: "weather",
+        badge: "01 // WEATHER",
+        icon: <CloudRain size={28} className="card-icon" />,
+        title: "Hyperlocal Weather",
+        desc: "Forget regional forecasts with 50 km accuracy gaps. Our algorithm collects data from proprietary weather stations and satellites, analyzing 15+ atmospheric parameters and building a separate forecast for each field.",
+        extraDesc: "The system automatically warns of risks and blocks planned operations when weather conditions are dangerous, saving your resources and time. Our meteorological model adapts to your microclimate over time.",
+        primaryBtn: "Connect weather station",
+        secondaryBtn: "View precipitation map",
+        video: "/14626085_3840_2160_25fps.mp4"
+      },
+      {
+        id: "machinery",
+        badge: "02 // MACHINERY",
+        icon: <Tractor size={28} className="card-icon" />,
+        title: "Machinery Monitoring",
+        desc: "A complete real-time digital twin of your entire fleet. Tractors, combines and sprayers transmit telemetry every 5 seconds: RTK-accurate GPS coordinates, engine RPM, fuel consumption and hydraulics status.",
+        extraDesc: "The system automatically detects idle time, field overlap during treatment and route deviations. A full report for each operation is generated without operator input, ensuring 100% cost transparency.",
+        primaryBtn: "Add machinery",
+        secondaryBtn: "Route analysis",
+        video: "/12093651_3840_2160_60fps.mp4"
+      },
+      {
+        id: "warehouse",
+        badge: "03 // WAREHOUSE",
+        icon: <Warehouse size={28} className="card-icon" />,
+        title: "Smart Warehouse",
+        desc: "From the elevator gate to every field hectare  complete material flow under your control. A network of IoT sensors monitors temperature and humidity in every grain bin cell around the clock.",
+        extraDesc: "When thresholds are exceeded, the system instantly sends alerts and suggests a ventilation plan. Seeds, fertilizers and crop protection inventory is automatically written off with each field operation, preventing human error.",
+        primaryBtn: "Run inventory",
+        secondaryBtn: "Warehouse balance",
+        video: "/12747865_1920_1080_60fps.mp4"
+      },
+      {
+        id: "reports",
+        badge: "04 // REPORTS",
+        icon: <FileBarChart size={28} className="card-icon" />,
+        title: "Digital History",
+        desc: "A single timeline of all events across your farm. Every field treatment, every dose of fertilizer and every harvest yield is stored automatically and forms a GPS-linked yield map.",
+        extraDesc: "Reports for banks, insurance companies and government agencies are generated in one click. The app works fully offline: all data syncs when connectivity returns, even if the agronomist spent the entire day in the field.",
+        primaryBtn: "Generate report",
+        secondaryBtn: "Export data",
+        video: "/9130276-hd_1920_1080_25fps.mp4"
+      }
+    ],
+    footerTitle: "Ready to step up?",
+    footerLead: "Join agribusiness leaders today. Leave the routine to algorithms, keep control and profit for yourself.",
+    btnAccount: "Create account",
+    rights: "All rights reserved.",
+    auth: {
+      loginTitle: "Log In",
+      registerTitle: "Create Account",
+      loginSub: "Enter your details to access the platform",
+      registerSub: "Get full control over your agribusiness",
+      fullName: "Full Name",
+      email: "Email",
+      password: "Password",
+      btnWait: "Please wait...",
+      btnLogin: "Log In",
+      btnRegister: "Sign Up",
+      noAccount: "Don't have an account?",
+      hasAccount: "Already have an account?",
+      google: "Continue with Google",
+      apple: "Continue with Apple",
+      or: "OR",
+      welcomeBack: "Welcome Back",
+      startNow: "Start Right Now",
+      brandDesc: "Precision farming platform. Meteorology, machinery and warehouse management in a single ecosystem."
+    }
+  }
+};
 
-function MouseGlowCard({ children, className }) {
-  const cardRef = useRef(null);
-  const glowRef = useRef(null);
-  const handleMove = (e) => {
-    if (!cardRef.current || !glowRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    glowRef.current.style.left = (e.clientX - rect.left) + 'px';
-    glowRef.current.style.top = (e.clientY - rect.top) + 'px';
-  };
-  return (
-    <div className={`bento-card ${className}`} ref={cardRef} onMouseMove={handleMove}>
-      <div className="mouse-glow" ref={glowRef}></div>
-      {children}
-    </div>
-  );
-}
+TRANSLATIONS.uk.auth = {
+  loginTitle: "Вхід в систему",
+  registerTitle: "Створити акаунт",
+  loginSub: "Введіть ваші дані для доступу до платформи",
+  registerSub: "Отримайте повний контроль над вашим агробізнесом",
+  fullName: "Ім'я і Прізвище",
+  email: "Email",
+  password: "Пароль",
+  btnWait: "Зачекайте...",
+  btnLogin: "Увійти",
+  btnRegister: "Зареєструватись",
+  noAccount: "Немає акаунту?",
+  hasAccount: "Вже є акаунт?",
+  google: "Продовжити з Google",
+  apple: "Продовжити з Apple",
+  or: "АБО",
+  welcomeBack: "З поверненням",
+  startNow: "Починайте прямо зараз",
+  brandDesc: "Платформа точного землеробства. Метеорологія, техніка та складський облік в єдиній екосистемі."
+};
 
-const FEED_DATA = [
-  { icon: 'green', Icon: Thermometer, text: 'Температура в норме', sub: 'Поле "Южное" — 22°C' },
-  { icon: 'amber', Icon: AlertTriangle, text: 'Возможен дождь через 6ч', sub: 'Рекомендация: отложить опрыскивание' },
-  { icon: 'blue', Icon: Truck, text: 'Трактор JD-8400 — ТО пройдено', sub: 'Следующее ТО через 200 моточасов' },
-  { icon: 'green', Icon: Droplets, text: 'Влажность почвы: 68%', sub: 'Поле "Центральное" — оптимально' },
-  { icon: 'red', Icon: AlertTriangle, text: 'Запасы NPK ниже 40%', sub: 'Склад №2 — требуется пополнение' },
-  { icon: 'green', Icon: Sun, text: 'Прогноз: ясно 3 дня', sub: 'Идеальные условия для уборки' },
-  { icon: 'blue', Icon: Bell, text: 'Новый отчёт готов', sub: 'Аналитика за июнь 2026' },
-];
+function LandingPage() {
+  const [lang, setLang] = useState('uk');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const t = TRANSLATIONS[lang];
+  const isLoggedIn = !!localStorage.getItem('access_token');
 
-function LiveFeed() {
-  const [feed, setFeed] = useState([
-    { ...FEED_DATA[0], time: '1 мин назад' },
-    { ...FEED_DATA[1], time: '3 мин назад' },
-    { ...FEED_DATA[2], time: '7 мин назад' },
-    { ...FEED_DATA[3], time: '12 мин назад' }
-  ]);
-
+  // Animate on scroll
   useEffect(() => {
-    const interval = setInterval(() => {
-      setFeed((prev) => {
-        const randomEvent = FEED_DATA[Math.floor(Math.random() * FEED_DATA.length)];
-        const newEvent = { ...randomEvent, time: 'Только что' };
-        
-        // Push older ones down
-        const updatedPrev = prev.map(item => {
-          if (item.time === 'Только что') return { ...item, time: '1 мин назад' };
-          if (item.time.includes('мин')) {
-            const mins = parseInt(item.time) + 1;
-            return { ...item, time: `${mins} мин назад` };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            if (entry.target.dataset.index !== undefined) {
+              setActiveIndex(Number(entry.target.dataset.index));
+            }
           }
-          return item;
         });
-
-        return [newEvent, ...updatedPrev].slice(0, 4);
-      });
-    }, 4500);
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <div className="feed-list">
-      {feed.map((item, i) => (
-        <div key={i} className="feed-item" style={{ animation: 'slideIn 0.4s ease both' }}>
-          <div className={`feed-icon fi-${item.icon}`}><item.Icon size={18} /></div>
-          <div className="feed-info">
-            <p>{item.text}</p>
-            <span>{item.sub} · {item.time}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function RoiCalculator() {
-  const [area, setArea] = useState(250);
-  const [yieldVal, setYieldVal] = useState(4.5);
-
-  const fuelSaved = area * 12; // 12 liters per hectare
-  const extraYield = (area * yieldVal * 0.085).toFixed(1); // 8.5% yield increase
-  const extraProfit = Math.floor(Number(extraYield) * 280); // $280 per ton of crop avg
+      },
+      { threshold: 0.5 }
+    );
+    document.querySelectorAll('.animate-on-scroll, .split-text-block').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [lang]);
 
   return (
-    <section className="calculator-section reveal">
-      <div className="section-label" style={{ display: 'block', width: 'fit-content', margin: '0 auto 16px' }}>Калькулятор ROI</div>
-      <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '16px' }}>Рассчитайте выгоду внедрения</h2>
-      <p className="section-desc" style={{ textAlign: 'center', margin: '0 auto 60px' }}>Узнайте, сколько ресурсов сэкономит и сколько дополнительной прибыли принесет ваша ферма с технологиями Agronomist.</p>
+    <div className="landing-container">
 
-      <div className="calc-container">
-        <div className="calc-inputs">
-          <div className="input-group">
-            <label>Площадь полей: <span>{area} га</span></label>
-            <input 
-              type="range" 
-              min="10" 
-              max="5000" 
-              step="10"
-              value={area} 
-              onChange={(e) => setArea(Number(e.target.value))} 
-              className="input-range"
-            />
-          </div>
-          <div className="input-group">
-            <label>Средняя урожайность: <span>{yieldVal} т/га</span></label>
-            <input 
-              type="range" 
-              min="1.0" 
-              max="15.0" 
-              step="0.1"
-              value={yieldVal} 
-              onChange={(e) => setYieldVal(Number(e.target.value))} 
-              className="input-range"
-            />
-          </div>
+      {/* ── NAVBAR ── */}
+      <nav className="top-nav">
+        <div className="logo-area">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M2 17L12 22L22 17" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M2 12L12 17L22 12" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="logo-text">АГРОКОНТРОЛЬ</span>
         </div>
-
-        <div className="calc-results">
-          <div className="result-card">
-            <div className="result-info">
-              <h4>Экономия топлива</h4>
-              <p><span>{fuelSaved.toLocaleString()}</span> л/год</p>
-            </div>
-            <div className="result-badge">-${Math.floor(fuelSaved * 1.3).toLocaleString()}</div>
+        <div className="nav-right">
+          <div className="lang-switcher">
+            <button onClick={() => setLang('uk')} className={lang === 'uk' ? 'lang-btn active' : 'lang-btn'}>UK</button>
+            <span className="lang-sep">|</span>
+            <button onClick={() => setLang('en')} className={lang === 'en' ? 'lang-btn active' : 'lang-btn'}>EN</button>
           </div>
-          <div className="result-card">
-            <div className="result-info">
-              <h4>Прибавка к урожаю</h4>
-              <p><span>+{extraYield}</span> тонн</p>
-            </div>
-            <div className="result-badge">+8.5% КПД</div>
-          </div>
-          <div className="result-card" style={{ borderColor: 'var(--g4)' }}>
-            <div className="result-info">
-              <h4>Чистая доп. прибыль</h4>
-              <p><span style={{ color: 'var(--g4)', background: 'none', WebkitTextFillColor: 'initial' }}>+${extraProfit.toLocaleString()}</span> / год</p>
-            </div>
-            <div className="result-badge" style={{ background: 'var(--g4)', color: '#000' }}>ROI 340%</div>
-          </div>
+          {isLoggedIn ? (
+            <a href="/dashboard" className="btn btn-primary btn-sm">Дашборд</a>
+          ) : (
+            <>
+              <a href="/login" className="btn btn-outline btn-sm">{t.navLogin}</a>
+              <a href="/register" className="btn btn-primary btn-sm">{t.navRegister}</a>
+            </>
+          )}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function App() {
-  const mainRef = useScrollReveal();
-  const particles = Array.from({ length: 30 }, (_, i) => ({
-    left: Math.random() * 100,
-    delay: Math.random() * 8,
-    duration: 6 + Math.random() * 6,
-    size: 1 + Math.random() * 2,
-  }));
-
-  return (
-    <div ref={mainRef}>
-      <nav className="navbar">
-        <div className="nav-logo">
-          <div className="logo-icon"><Leaf size={18} color="#fff" /></div>
-          Agronomist
-        </div>
-        <ul className="nav-links">
-          <li><a href="#features">Модули</a></li>
-          <li><a href="#live">Мониторинг</a></li>
-          <li><a href="#how">Как работает</a></li>
-        </ul>
-        <button className="nav-cta">Войти в систему</button>
       </nav>
 
-      <section className="hero">
-        <div className="hero-video-bg">
-          <video autoPlay loop muted playsInline>
-            <source src="/hero-video.mp4" type="video/mp4" />
-          </video>
-        </div>
-        <div className="hero-gradient"></div>
-        <div className="orb orb-1"></div>
-        <div className="orb orb-2"></div>
-        <div className="orb orb-3"></div>
-        <div className="particles">
-          {particles.map((p, i) => (
-            <div key={i} className="particle" style={{
-              left: p.left + '%',
-              width: p.size + 'px', height: p.size + 'px',
-              animationDelay: p.delay + 's',
-              animationDuration: p.duration + 's',
-            }} />
-          ))}
-        </div>
-        <div className="hero-inner">
-          <div className="hero-badge"><span className="pulse-dot"></span> Платформа нового поколения</div>
-          <h1>Полный контроль<br />над <span className="gradient-text">агробизнесом</span></h1>
-          <p className="hero-desc">Единая система управления: погода, поля, техника и склады. Принимайте решения на основе данных, а не интуиции.</p>
-          <div className="hero-buttons">
-            <button className="btn-main">Начать бесплатно <ArrowRight size={18} /></button>
-            <button className="btn-ghost"><Play size={18} /> Смотреть демо</button>
+      <main className="content-wrapper">
+
+        {/* ── HERO ── */}
+        <section className="hero-section">
+          <video autoPlay loop muted playsInline className="hero-bg-video" src="/hero-video.mp4" />
+          <div className="hero-bg-overlay" />
+          <div className="hero-content">
+            <h1 className="massive-title">{t.heroTitle}</h1>
+            <p className="hero-lead">{t.heroLead}</p>
+            <div className="hero-actions">
+              {isLoggedIn ? (
+                <a href="/dashboard" className="btn btn-primary btn-large">Дашборд</a>
+              ) : (
+                <a href="/register" className="btn btn-primary btn-large">{t.btnOpen}</a>
+              )}
+              <a href="#features" className="btn btn-outline btn-large">{t.btnFeatures}</a>
+            </div>
           </div>
-        </div>
-        <div className="hero-float left">
-          <div className="float-icon green"><Thermometer size={20} /></div>
-          <div className="float-text"><p>AgroAnalyzer</p><span>Риск заморозков: 0%</span></div>
-        </div>
-        <div className="hero-float right">
-          <div className="float-icon amber"><BarChart3 size={20} /></div>
-          <div className="float-text"><p>Урожайность</p><span>+12% к прогнозу</span></div>
-        </div>
-      </section>
+        </section>
 
-      <div className="stats-bar">
-        <div className="stat-item"><AnimatedCounter end={50} suffix="K+" /><div className="stat-label">Гектаров под контролем</div></div>
-        <div className="stat-item"><AnimatedCounter end={99} suffix=".9%" /><div className="stat-label">Uptime системы</div></div>
-        <div className="stat-item"><span className="stat-num">24/7</span><div className="stat-label">Мониторинг реального времени</div></div>
-        <div className="stat-item"><AnimatedCounter end={30} suffix="%" /><div className="stat-label">Снижение затрат на ГСМ</div></div>
-      </div>
+        {/* ── SPLIT-SCREEN FEATURES ── */}
+        <section id="features" className="split-features-container">
 
-      <section className="features" id="features">
-        <div className="reveal"><div className="section-label">Модули</div></div>
-        <h2 className="section-title reveal reveal-delay-1">Всё что нужно.<br />В одном месте.</h2>
-        <p className="section-desc reveal reveal-delay-2">Четыре мощных модуля, которые покрывают каждый аспект управления сельскохозяйственным предприятием.</p>
-
-        <div className="bento">
-          <MouseGlowCard className="span-7 reveal reveal-delay-1">
-            <div className="card-icon"><CloudRain size={24} /></div>
-            <h3>Погода и AgroAnalyzer</h3>
-            <p>Высокоточный прогноз Open-Meteo с AI-анализом рисков. Заморозки, засуха, осадки — система предупредит заранее.</p>
-            <div className="card-visual">
-              <div className="mini-chart">
-                {[35,55,45,25,70,60,80,50,90,65,40,75].map((h,i) => (
-                  <div key={i} className={`cbar${h===25?' danger':''}`} style={{height:h+'%'}} />
-                ))}
-              </div>
-            </div>
-          </MouseGlowCard>
-
-          <MouseGlowCard className="span-5 reveal reveal-delay-2">
-            <div className="card-icon"><MapPin size={24} /></div>
-            <h3>Управление полями</h3>
-            <p>Кадастр, севооборот и геозоны.</p>
-            <div className="card-visual">
-              <div className="dot-map">
-                <div className="map-dot d1"></div>
-                <div className="map-dot d2"></div>
-                <div className="map-dot d3"></div>
-                <div className="map-dot d4"></div>
-                <div className="map-label l1">Пшеница — 120 га</div>
-                <div className="map-label l2">Кукуруза — 85 га</div>
-                <div className="map-label l3">Подсолнух — 60 га</div>
-              </div>
-            </div>
-          </MouseGlowCard>
-
-          <MouseGlowCard className="span-5b reveal reveal-delay-3">
-            <div className="card-icon"><Truck size={24} /></div>
-            <h3>Техника</h3>
-            <p>Контроль моточасов, ТО и статуса каждой единицы в парке.</p>
-            <div className="card-visual">
-              <div className="gauge-wrap">
-                <div className="gauge"><span>70%</span></div>
-                <div className="gauge-stats">
-                  <div className="gauge-stat"><div className="gauge-dot" style={{background:'var(--g4)'}}></div>Активно <b>14</b></div>
-                  <div className="gauge-stat"><div className="gauge-dot" style={{background:'#f59e0b'}}></div>На ТО <b>4</b></div>
-                  <div className="gauge-stat"><div className="gauge-dot" style={{background:'#ef4444'}}></div>Простой <b>2</b></div>
+          <div className="split-content-side">
+            {t.sections.map((sec, index) => (
+              <div key={sec.id} className="split-text-block" data-index={index}>
+                <div className="split-icon-wrapper">{sec.icon}</div>
+                <div className="split-badge">{sec.badge}</div>
+                <h2 className="split-title">{sec.title}</h2>
+                <p className="split-desc">{sec.desc}</p>
+                <p className="split-desc" style={{ marginTop: '1rem', color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
+                  {sec.extraDesc}
+                </p>
+                <div className="split-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <a href="/register" className="btn btn-primary">{sec.primaryBtn}</a>
+                  <a href="/login" className="btn-text-link">{sec.secondaryBtn} &rarr;</a>
                 </div>
               </div>
+            ))}
+          </div>
+
+          <div className="split-video-side">
+            <div className="split-video-sticky">
+              {t.sections.map((sec, index) => (
+                <video
+                  key={sec.id}
+                  autoPlay loop muted playsInline
+                  className={`split-video${activeIndex === index ? ' active' : ''}`}
+                  src={sec.video}
+                />
+              ))}
+              <div className="split-video-overlay" />
             </div>
-          </MouseGlowCard>
-
-          <MouseGlowCard className="span-7b reveal reveal-delay-4">
-            <div className="card-icon"><Package size={24} /></div>
-            <h3>Склады и Учёт</h3>
-            <p>Многоуровневый складской учёт: партии, сроки, семена, удобрения и ГСМ.</p>
-            <div className="card-visual">
-              <div className="progress-list">
-                <div className="progress-item"><label><span>Семена (пшеница)</span><span>85%</span></label><div className="progress-track"><div className="progress-fill green" style={{width:'85%'}}></div></div></div>
-                <div className="progress-item"><label><span>Удобрения NPK</span><span>42%</span></label><div className="progress-track"><div className="progress-fill amber" style={{width:'42%'}}></div></div></div>
-                <div className="progress-item"><label><span>ГСМ (Дизель)</span><span>67%</span></label><div className="progress-track"><div className="progress-fill green" style={{width:'67%'}}></div></div></div>
-                <div className="progress-item"><label><span>Гербициды</span><span>18%</span></label><div className="progress-track"><div className="progress-fill red" style={{width:'18%'}}></div></div></div>
-              </div>
-            </div>
-          </MouseGlowCard>
-        </div>
-      </section>
-
-      <section className="live-section" id="live">
-        <div className="live-container">
-          <div className="live-text">
-            <div className="reveal"><div className="section-label">Мониторинг</div></div>
-            <h2 className="section-title reveal reveal-delay-1">Всё происходит<br />прямо сейчас</h2>
-            <p className="section-desc reveal reveal-delay-2">Система собирает данные 24/7. Каждое изменение температуры, каждый выезд техники, каждое движение на складе — всё фиксируется и анализируется в реальном времени.</p>
           </div>
-          <div className="live-feed reveal reveal-delay-3">
-            <div className="feed-header"><span className="live-dot"></span> Live Feed</div>
-            <LiveFeed />
+
+        </section>
+
+        {/* ── FOOTER ── */}
+        <section className="footer-cta">
+          <div className="animate-on-scroll footer-cta-inner">
+            <h2 className="massive-title footer-cta-title">{t.footerTitle}</h2>
+            <p className="hero-lead footer-cta-lead">{t.footerLead}</p>
+            {isLoggedIn ? (
+              <a href="/dashboard" className="btn btn-primary btn-large footer-cta-btn">Дашборд</a>
+            ) : (
+              <a href="/register" className="btn btn-primary btn-large footer-cta-btn">{t.btnAccount}</a>
+            )}
+            <p className="copyright">&copy; {new Date().getFullYear()}  АГРОКОНТРОЛЬ. {t.rights}</p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <RoiCalculator />
-
-      <section className="how-section" id="how">
-        <div className="how-inner">
-          <div className="reveal"><div className="section-label">Процесс</div></div>
-          <h2 className="section-title reveal reveal-delay-1">Три шага к результату</h2>
-          <p className="section-desc reveal reveal-delay-2" style={{marginLeft:'auto',marginRight:'auto'}}>От регистрации до полного контроля — за один рабочий день.</p>
-          <div className="steps">
-            <div className="step reveal reveal-delay-1"><div className="step-num">01</div><h3>Подключите данные</h3><p>Добавьте ваши поля, технику и склады. Импорт из Excel или ручной ввод.</p></div>
-            <div className="step reveal reveal-delay-2"><div className="step-num">02</div><h3>Настройте аналитику</h3><p>AgroAnalyzer привяжет прогноз к каждому полю и начнёт анализ рисков автоматически.</p></div>
-            <div className="step reveal reveal-delay-3"><div className="step-num">03</div><h3>Управляйте и растите</h3><p>Получайте уведомления, оптимизируйте расходы, увеличивайте урожайность.</p></div>
-          </div>
-        </div>
-      </section>
-
-      <section className="cta-section">
-        <div className="cta-box reveal">
-          <h2>Готовы к точному<br />земледелию?</h2>
-          <p>Присоединяйтесь к фермерам, которые уже управляют тысячами гектаров с помощью Agronomist.</p>
-          <button className="btn-main">Начать бесплатно <ArrowRight size={18} /></button>
-        </div>
-      </section>
-
-      <footer className="site-footer">
-        <div className="footer-grid">
-          <div className="footer-brand"><h3>Agronomist 2.0</h3><p>Интеллектуальная платформа для управления сельскохозяйственным предприятием.</p></div>
-          <div className="footer-col"><h4>Продукт</h4><a href="#">Погода</a><a href="#">Поля</a><a href="#">Техника</a><a href="#">Склады</a></div>
-          <div className="footer-col"><h4>Компания</h4><a href="#">О нас</a><a href="#">Документация</a><a href="#">API</a></div>
-          <div className="footer-col"><h4>Поддержка</h4><a href="#">Telegram</a><a href="#">Email</a><a href="#">FAQ</a></div>
-        </div>
-        <div className="footer-bottom"><span>© 2026 Agronomist. Все права защищены.</span><span>Сделано с ❤️ для агробизнеса</span></div>
-      </footer>
+      </main>
     </div>
   );
 }
 
-export default App;
+
+
+// ─── Password Strength Helper ────────────────────────────────────
+function getPasswordStrength(pwd) {
+  let score = 0;
+  const checks = {
+    length: pwd.length >= 8,
+    upper: /[A-Z]/.test(pwd),
+    lower: /[a-z]/.test(pwd),
+    digit: /\d/.test(pwd),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+  };
+  score = Object.values(checks).filter(Boolean).length;
+  if (score <= 2) return { level: 'weak', label: 'Слабкий', color: '#ef4444', width: '25%' };
+  if (score === 3) return { level: 'fair', label: 'Середній', color: '#f59e0b', width: '50%' };
+  if (score === 4) return { level: 'good', label: 'Хороший', color: '#3b82f6', width: '75%' };
+  return { level: 'strong', label: 'Сильний', color: '#22c55e', width: '100%' };
+}
+
+// ─── Auth Page Component ─────────────────────────────────────────
+function AuthPage({ isLogin }) {
+  const [lang, setLang] = useState('uk');
+  const t = TRANSLATIONS[lang].auth;
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const pwdStrength = !isLogin && password.length > 0 ? getPasswordStrength(password) : null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      if (isLogin) {
+        const res = await fetch(`${API_BASE}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Помилка входу');
+        localStorage.setItem('access_token', data.access_token);
+        localStorage.setItem('refresh_token', data.refresh_token);
+        setSuccess('Вхід успішний! Переходимо...');
+        setTimeout(() => {
+          window.history.pushState({}, '', '/dashboard');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }, 800);
+      } else {
+        const res = await fetch(`${API_BASE}/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const msg = Array.isArray(data.detail)
+            ? data.detail.map(e => e.msg).join('; ')
+            : (data.detail || 'Помилка реєстрації');
+          throw new Error(msg);
+        }
+        setSuccess('Акаунт створено! Переходимо до входу...');
+        setTimeout(() => {
+          window.history.pushState({}, '', '/login');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }, 1200);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="premium-site auth-page">
+      <div className="global-bg-container">
+        <video className="global-bg-video" autoPlay muted loop playsInline>
+          <source src="/15684083_3840_2160_60fps.mp4" type="video/mp4" />
+        </video>
+        <div className="global-bg-overlay auth-video-overlay"></div>
+      </div>
+
+      <a href="/" className="auth-back">
+        <ArrowLeft size={18} />
+        <span>На головну</span>
+      </a>
+
+      <div className="auth-wrapper">
+        {/* Left brand panel */}
+        <div className="auth-brand-panel">
+          <div className="auth-brand-logo">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 17L12 22L22 17" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M2 12L12 17L22 12" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="auth-brand-name"> АГРОКОНТРОЛЬ</span>
+          </div>
+          <h1 className="auth-brand-title">
+            {isLogin ? t.welcomeBack : t.startNow}
+          </h1>
+          <p className="auth-brand-desc" style={{ maxWidth: '400px' }}>
+            {t.brandDesc}
+          </p>
+        </div>
+
+        {/* Right form panel */}
+        <div className="auth-form-panel glass-card">
+          <div className="auth-form-header">
+            <h2 className="auth-form-title">
+              {isLogin ? t.loginTitle : t.registerTitle}
+            </h2>
+            <p className="auth-form-subtitle">
+              {isLogin ? t.loginSub : t.registerSub}
+            </p>
+          </div>
+
+          <div className="auth-social-buttons" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = `${API_BASE}/auth/google/login`;
+              }}
+              className="btn btn-outline"
+              style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z" /></svg>
+              {t.google}
+            </button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', color: 'rgba(255,255,255,0.2)', fontSize: '0.8rem', fontWeight: 600 }}>
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+            {t.or}
+            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+          </div>
+
+          {error && (
+            <div className="auth-alert auth-alert-error">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="auth-alert auth-alert-success">
+              <CheckCircle size={16} />
+              <span>{success}</span>
+            </div>
+          )}
+
+          <form className="auth-form" onSubmit={handleSubmit}>
+            {!isLogin && (
+              <div className="auth-field">
+                <label className="auth-label">{t.fullName}</label>
+                <div className="auth-input-wrap">
+                  <User size={16} className="auth-input-icon" />
+                  <input
+                    id="auth-fullname"
+                    type="text"
+                    className="auth-input"
+                    placeholder="Іван Петренко"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="auth-field">
+              <label className="auth-label">{t.email}</label>
+              <div className="auth-input-wrap">
+                <Mail size={16} className="auth-input-icon" />
+                <input
+                  id="auth-email"
+                  type="email"
+                  className="auth-input"
+                  placeholder="agro@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label className="auth-label">{t.password}</label>
+              <div className="auth-input-wrap">
+                <Lock size={16} className="auth-input-icon" />
+                <input
+                  id="auth-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="auth-input"
+                  placeholder={isLogin ? '••••••••' : 'Мін. 8 символів, A-z, 0-9, !@#'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="auth-pwd-toggle"
+                  onClick={() => setShowPassword(v => !v)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Сховати пароль' : 'Показати пароль'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {pwdStrength && (
+                <div className="pwd-strength">
+                  <div className="pwd-strength-bar">
+                    <div
+                      className="pwd-strength-fill"
+                      style={{ width: pwdStrength.width, background: pwdStrength.color }}
+                    />
+                  </div>
+                  <span className="pwd-strength-label" style={{ color: pwdStrength.color }}>
+                    {pwdStrength.label}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <button
+              id="auth-submit-btn"
+              type="submit"
+              className="btn btn-primary auth-submit"
+              disabled={loading}
+            >
+              {loading
+                ? <><Loader2 size={18} className="spin" /> {t.btnWait}</>
+                : (isLogin ? t.btnLogin : t.btnRegister)}
+            </button>
+          </form>
+
+          <div className="auth-links">
+            {isLogin ? (
+              <>{t.noAccount} <a href="/register">{t.btnRegister}</a></>
+            ) : (
+              <>{t.hasAccount} <a href="/login">{t.btnLogin}</a></>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App Router ─────────────────────────────────────────────
+export default function App() {
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handlePopState = () => setCurrentPath(window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
+
+    const handleClick = (e) => {
+      const target = e.target.closest('a');
+      if (target && target.getAttribute('href')?.startsWith('/')) {
+        const href = target.getAttribute('href');
+        if (href.startsWith('#')) {
+          e.preventDefault();
+          document.querySelector(href)?.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+
+        e.preventDefault();
+        window.history.pushState({}, '', href);
+        setCurrentPath(href);
+        window.scrollTo(0, 0);
+      }
+    };
+    document.addEventListener('click', handleClick);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('click', handleClick);
+    };
+  }, []);
+
+  if (currentPath === '/login') return <AuthPage isLogin={true} />;
+  if (currentPath === '/register') return <AuthPage isLogin={false} />;
+
+
+  return <LandingPage />;
+}

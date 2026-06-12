@@ -68,7 +68,7 @@ class AgroAnalyzer:
     def _analyze_humidity(relative_humidity: float, soil_temp: float) -> list[str]:
         warnings: list[str] = []
         if relative_humidity >= 85.0 and soil_temp > 10.0:
-            warnings.append(f"ВНИМАНИЕ: Высокая влажность воздуха ({relative_humidity:.0f}%) при тёплой почве — повышенный риск грибковых заболеваний.")
+            warnings.append(f"ВНИМАНИЕ: Высокая влажность воздуха ({relative_humidity:.0f}%) при тёплой почве  повышенный риск грибковых заболеваний.")
         return warnings
 
     @staticmethod
@@ -91,16 +91,16 @@ class AgroAnalyzer:
     def _analyze_visibility(visibility_m: float) -> list[str]:
         warnings: list[str] = []
         if visibility_m < 1000.0:
-            warnings.append(f"ВНИМАНИЕ: Очень низкая видимость ({visibility_m:.0f} м) — туман. Работа техники на поле опасна.")
+            warnings.append(f"ВНИМАНИЕ: Очень низкая видимость ({visibility_m:.0f} м)  туман. Работа техники на поле опасна.")
         return warnings
 
     @staticmethod
     def _analyze_vpd(vpd_kpa: float) -> list[str]:
         warnings: list[str] = []
         if vpd_kpa > 2.5:
-            warnings.append(f"ВНИМАНИЕ: Дефицит давления пара {vpd_kpa:.2f} кПа — экстремальный стресс транспирации. Срочно необходим полив.")
+            warnings.append(f"ВНИМАНИЕ: Дефицит давления пара {vpd_kpa:.2f} кПа  экстремальный стресс транспирации. Срочно необходим полив.")
         elif vpd_kpa > 1.5:
-            warnings.append(f"ПРЕДУПРЕЖДЕНИЕ: Дефицит давления пара {vpd_kpa:.2f} кПа — умеренный стресс транспирации.")
+            warnings.append(f"ПРЕДУПРЕЖДЕНИЕ: Дефицит давления пара {vpd_kpa:.2f} кПа  умеренный стресс транспирации.")
         return warnings
 
     @staticmethod
@@ -113,7 +113,7 @@ class AgroAnalyzer:
         elif european_aqi >= 25:
             warnings.append(f"ИНФОРМАЦИЯ: Умеренное качество воздуха (EAQI={european_aqi}). Чувствительным лицам рекомендуется ограничить пребывание на поле.")
         if pm10 > 50:
-            warnings.append(f"ВНИМАНИЕ: PM10 = {pm10:.0f} мкг/м³. Опрыскивание не рекомендуется — взвешенные частицы снижают эффективность химикатов.")
+            warnings.append(f"ВНИМАНИЕ: PM10 = {pm10:.0f} мкг/м³. Опрыскивание не рекомендуется  взвешенные частицы снижают эффективность химикатов.")
         if dust > 15:
             warnings.append(f"ВНИМАНИЕ: Высокая запылённость ({dust:.0f} мкг/м³). Ожидайте снижения фотосинтетической активности.")
         if pm2_5 > 25:

@@ -32,3 +32,4 @@ async def get_yield_forecast(
     from backend.modeles.models import User
     user = db.query(User).filter(User.email == user_email).first()
     return YieldForecastService.forecast_yield(db, field_id, user.id)
+

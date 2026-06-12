@@ -1,4 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import RedirectResponse
+import httpx
+import secrets
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
@@ -121,7 +124,7 @@ async def refresh_tokens(body: RefreshTokenRequest, request: Request, db: Sessio
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout(body: RefreshTokenRequest, current_user: str = Depends(get_current_user)):
-    """Отзыв refresh token — пользователь больше не сможет обновить токены."""
+    """Отзыв refresh token  пользователь больше не сможет обновить токены."""
     payload = decode_token(body.refresh_token)
     if payload.get("sub") != current_user:
         raise HTTPException(status_code=403, detail="Refresh token не принадлежит текущему пользователю")
@@ -141,3 +144,91 @@ def get_profile(current_user: str = Depends(get_current_user), db: Session = Dep
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден")
     return user
+
+
+@router.get("/auth/google/login")
+def google_login():
+    """Перенаправляє користувача на сторінку входу Google."""
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(status_code=500, detail="Google Client ID не налаштовано")
+        
+    redirect_uri = f"http://localhost:8000/api/auth/google/callback"
+    google_auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth"
+        f"?response_type=code"
+        f"&client_id={settings.GOOGLE_CLIENT_ID}"
+        f"&redirect_uri={redirect_uri}"
+        f"&scope=openid%20email%20profile"
+        f"&access_type=offline"
+        f"&prompt=select_account"
+    )
+    return RedirectResponse(url=google_auth_url)
+
+
+@router.get("/auth/google/callback")
+async def google_callback(code: str, request: Request, db: Session = Depends(get_db)):
+    """Обробляє відповідь від Google, створює або авторизує користувача."""
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="Google Credentials не налаштовано")
+
+    redirect_uri = f"http://localhost:8000/api/auth/google/callback"
+    
+    # 1. Отримуємо access token від Google
+    async with httpx.AsyncClient() as client:
+        token_res = await client.post(
+            "https://oauth2.googleapis.com/token",
+            data={
+                "client_id": settings.GOOGLE_CLIENT_ID,
+                "client_secret": settings.GOOGLE_CLIENT_SECRET,
+                "code": code,
+                "grant_type": "authorization_code",
+                "redirect_uri": redirect_uri,
+            },
+        )
+        token_data = token_res.json()
+        
+        if "access_token" not in token_data:
+            raise HTTPException(status_code=400, detail="Не вдалося отримати токен від Google")
+            
+        access_token = token_data["access_token"]
+        
+        # 2. Отримуємо дані користувача (email)
+        user_res = await client.get(
+            "https://www.googleapis.com/oauth2/v1/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        user_info = user_res.json()
+        email = user_info.get("email")
+        
+        if not email:
+            raise HTTPException(status_code=400, detail="Не вдалося отримати email від Google")
+
+    # 3. Перевіряємо, чи є користувач в БД, або створюємо нового
+    db_user = db.query(models.User).filter(models.User.email == email).first()
+    if not db_user:
+        # Створюємо користувача з випадковим паролем
+        random_password = secrets.token_urlsafe(16)
+        hashed_pw = get_password_hash(random_password)
+        db_user = models.User(email=email, hashed_password=hashed_pw)
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        security_logger.info(f"Створено нового користувача через Google: {email}")
+
+    # 4. Генеруємо наші токени (як при звичайному логіні)
+    sys_access_token = create_access_token(data={"sub": db_user.email})
+    sys_refresh_token, jti = create_refresh_token(data={"sub": db_user.email})
+
+    # Зберігаємо refresh token в Redis
+    redis = await get_redis()
+    await redis.setex(
+        f"refresh_token:{jti}",
+        settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400,
+        db_user.email,
+    )
+    
+    security_logger.info(f"Успішний вхід через Google: {email}")
+    
+    # Перенаправляємо на фронтенд і передаємо токени в URL параметрах
+    frontend_redirect = f"{settings.FRONTEND_URL}/dashboard?access_token={sys_access_token}&refresh_token={sys_refresh_token}"
+    return RedirectResponse(url=frontend_redirect)

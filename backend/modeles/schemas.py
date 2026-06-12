@@ -430,3 +430,4 @@ class StorageConditionResponse(StorageConditionCreate):
     date: datetime
     class Config:
         from_attributes = True
+

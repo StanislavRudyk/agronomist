@@ -32,7 +32,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
 
 def create_refresh_token(data: dict) -> tuple[str, str]:
-    """Создаёт refresh token. Возвращает (token, jti) — jti нужен для хранения в Redis."""
+    """Создаёт refresh token. Возвращает (token, jti)  jti нужен для хранения в Redis."""
     jti = str(uuid.uuid4())
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)

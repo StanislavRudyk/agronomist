@@ -1,4 +1,4 @@
-"""Shared user resolution — avoids AttributeError when user missing."""
+"""Shared user resolution  avoids AttributeError when user missing."""
 from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 

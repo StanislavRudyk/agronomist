@@ -56,7 +56,7 @@ class WarehouseService:
             db.rollback()
             wh = db.query(Warehouse).filter(Warehouse.id == data.warehouse_id).first()
             if wh and wh.current_load_t + data.weight_t > wh.capacity_t:
-                raise HTTPException(status_code=409, detail="Конкурентное обновление склада — повторите операцию")
+                raise HTTPException(status_code=409, detail="Конкурентное обновление склада  повторите операцию")
             raise
         db.refresh(lot)
         return lot

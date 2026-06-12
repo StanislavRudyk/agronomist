@@ -1,0 +1,39 @@
+name: Build and Push Frontend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./frontend
+        
+      - name: Build project
+        run: npm run build
+        working-directory: ./frontend
+        
+      - name: Commit built files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add frontend/dist/ -f
+          git commit -m "Автоматична збірка фронтенду (GitHub Actions)" || echo "Немає змін для коміту"
+          git push origin main

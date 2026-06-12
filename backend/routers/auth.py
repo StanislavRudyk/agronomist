@@ -152,7 +152,7 @@ def google_login():
     if not settings.GOOGLE_CLIENT_ID:
         raise HTTPException(status_code=500, detail="Google Client ID не налаштовано")
         
-    redirect_uri = f"http://localhost:8000/api/auth/google/callback"
+    redirect_uri = f"{settings.BACKEND_URL}/api/auth/google/callback"
     google_auth_url = (
         f"https://accounts.google.com/o/oauth2/v2/auth"
         f"?response_type=code"
@@ -171,7 +171,7 @@ async def google_callback(code: str, request: Request, db: Session = Depends(get
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
         raise HTTPException(status_code=500, detail="Google Credentials не налаштовано")
 
-    redirect_uri = f"http://localhost:8000/api/auth/google/callback"
+    redirect_uri = f"{settings.BACKEND_URL}/api/auth/google/callback"
     
     # 1. Отримуємо access token від Google
     async with httpx.AsyncClient() as client:

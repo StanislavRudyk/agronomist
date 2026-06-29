@@ -1,4 +1,4 @@
-# 🌾 Agronomist (AgroData.Pro)
+# 🌾 Agronomist
 
 <div align="center">
   <h3><strong>Инновационная платформа для управления агропредприятием</strong></h3>
@@ -125,12 +125,4 @@
 7. На сервере активируется виртуальное окружение, обновляются зависимости `pip install -r requirements.txt`.
 8. Перезапускается процесс `uvicorn`.
 
----
 
-## 🤝 Контрибьютинг (Как помочь проекту)
-
-1. Сделайте **Fork** репозитория.
-2. Создайте новую ветку: `git checkout -b feature/MyAwesomeFeature`.
-3. Закоммитьте изменения: `git commit -m 'Add MyAwesomeFeature'`.
-4. Запушьте ветку в форк: `git push origin feature/MyAwesomeFeature`.
-5. Откройте **Pull Request** в основном репозитории.
